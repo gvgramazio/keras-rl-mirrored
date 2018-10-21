@@ -10,7 +10,10 @@ from rl.agents import DDPGAgent
 from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
 
+import matplotlib.pyplot as plt
+
 ENV_NAME = 'FoosballVREP_sp-v0'
+WINDOW_LENGTH = 4
 gym.undo_logger_setup()
 
 
@@ -23,7 +26,7 @@ nb_actions = env.action_space.shape[0]
 
 # Next, we build a very simple model.
 actor = Sequential()
-actor.add(Flatten(input_shape=(1,) + env.observation_space.shape))
+actor.add(Flatten(input_shape=(WINDOW_LENGTH,) + env.observation_space.shape))
 actor.add(Dense(32))
 actor.add(Activation('relu'))
 actor.add(Dense(32))
@@ -35,7 +38,7 @@ actor.add(Activation('linear'))
 print(actor.summary())
 
 action_input = Input(shape=(nb_actions,), name='action_input')
-observation_input = Input(shape=(1,) + env.observation_space.shape, name='observation_input')
+observation_input = Input(shape=(WINDOW_LENGTH,) + env.observation_space.shape, name='observation_input')
 flattened_observation = Flatten()(observation_input)
 x = Concatenate()([action_input, flattened_observation])
 x = Dense(64)(x)
@@ -51,7 +54,7 @@ print(critic.summary())
 
 # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
 # even the metrics!
-memory = SequentialMemory(limit=100000, window_length=1)
+memory = SequentialMemory(limit=100000, window_length=WINDOW_LENGTH)
 random_process = OrnsteinUhlenbeckProcess(size=nb_actions, theta=.15, mu=0., sigma=.3)
 agent = DDPGAgent(nb_actions=nb_actions, actor=actor, critic=critic, critic_action_input=action_input,
                   memory=memory, nb_steps_warmup_critic=100, nb_steps_warmup_actor=100,
@@ -61,10 +64,20 @@ agent.compile(Adam(lr=.001, clipnorm=1.), metrics=['mae'])
 # Okay, now it's time to learn something! We visualize the training here for show, but this
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
-agent.fit(env, nb_steps=50000, visualize=True, verbose=1, nb_max_episode_steps=200)
+history = agent.fit(env, nb_steps=50000, visualize=False, verbose=1, nb_max_episode_steps=200)
+
+# Plot results
+plt.plot(history.history['episode_reward'])
+plt.title('Model reward')
+plt.ylabel('Reward')
+plt.xlabel('Episode')
+# plt.show()
+plt.savefig('ddpg_{}_rewards.png'.format(ENV_NAME))
 
 # After training is done, we save the final weights.
 agent.save_weights('ddpg_{}_weights.h5f'.format(ENV_NAME), overwrite=True)
 
 # Finally, evaluate our algorithm for 5 episodes.
+directory = 'videos/foosball/ddpg'
+env = gym.wrappers.Monitor(env, directory, force=True, video_callable=lambda episode_id: True)
 agent.test(env, nb_episodes=5, visualize=True, nb_max_episode_steps=200)
