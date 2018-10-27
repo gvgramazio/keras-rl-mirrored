@@ -42,7 +42,7 @@ NB_EPISODES = args.nb_episodes
 VISUALIZE_TEST = args.render_test
 
 
-class PendulumProcessor(Processor):
+class NAFProcessor(Processor):
     def process_reward(self, reward):
         # The magnitude of the reward can be important. Since each step yields a relatively
         # high reward, we reduce the magnitude by two orders.
@@ -97,7 +97,7 @@ print(L_model.summary())
 
 # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
 # even the metrics!
-processor = PendulumProcessor()
+processor = NAFProcessor()
 memory = SequentialMemory(limit=MEMORY_LIMIT, window_length=WINDOW_LENGHT)
 random_process = OrnsteinUhlenbeckProcess(theta=.15, mu=0., sigma=.3, size=nb_actions)
 agent = NAFAgent(nb_actions=nb_actions, V_model=V_model, L_model=L_model, mu_model=mu_model,
