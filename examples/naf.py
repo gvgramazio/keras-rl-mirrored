@@ -1,5 +1,6 @@
 import numpy as np
 import gym
+import gym_foosball
 import argparse
 
 from keras.models import Sequential, Model
