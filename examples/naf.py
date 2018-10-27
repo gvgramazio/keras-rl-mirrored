@@ -10,6 +10,7 @@ from rl.agents import NAFAgent
 from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
 from rl.core import Processor
+from rl.callbacks import FileLogger
 
 parser = argparse.ArgumentParser(description='Continuous DQN (NAF) with gym environments')
 parser.add_argument('--env', type=str, default='Pendulum-v0',help="OpenAI Gym Environment")
@@ -108,7 +109,15 @@ agent.compile(Adam(lr=.001, clipnorm=1.), metrics=['mae'])
 # Okay, now it's time to learn something! We visualize the training here for show, but this
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
-agent.fit(env, nb_steps=NB_STEPS, visualize=VISUALIZE_TRAIN, verbose=VERBOSE, nb_max_episode_steps=NB_MAX_EPISODE_STEPS)
+log_filename = 'naf_{}_log.json'.format(ENV_NAME)
+callbacks = [FileLogger(log_filename, interval=1)]
+history = agent.fit(
+    env,
+    nb_steps=NB_STEPS,
+    visualize=VISUALIZE_TRAIN,
+    verbose=VERBOSE,
+    nb_max_episode_steps=NB_MAX_EPISODE_STEPS,
+    callbacks=callbacks)
 
 # After training is done, we save the final weights.
 agent.save_weights('cdqn_{}_weights.h5f'.format(ENV_NAME), overwrite=True)
