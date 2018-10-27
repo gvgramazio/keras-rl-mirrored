@@ -26,8 +26,10 @@ parser.add_argument('--render_train', dest='render_train', action='store_true', 
 parser.add_argument('--verbose', type=int, default=2, help="Level of verbosity of training")
 parser.add_argument('--nb_episodes', type=int, default=5, help="Number of episodes to test")
 parser.add_argument('--render_test', dest='render_test', action='store_true', help="Either to visualize render or not during testing")
+parser.add_argument('--load_weights', dest='load_weights', action='store_true', help="Either to load previous weights or not before training")
 parser.set_defaults(render_train=False)
 parser.set_defaults(render_test=False)
+parser.set_defaults(load_weights=False)
 args = parser.parse_args()
 
 ENV_NAME = args.env
@@ -42,6 +44,7 @@ VISUALIZE_TRAIN = args.render_train
 VERBOSE = args.verbose
 NB_EPISODES = args.nb_episodes
 VISUALIZE_TEST = args.render_test
+LOAD_WEIGHTS = args.load_weights
 
 
 class NAFProcessor(Processor):
@@ -106,6 +109,9 @@ agent = NAFAgent(nb_actions=nb_actions, V_model=V_model, L_model=L_model, mu_mod
                  memory=memory, nb_steps_warmup=NB_STEPS_WARMUP, random_process=random_process,
                  gamma=GAMMA, target_model_update=TARGET_MODEL_UPDATE, processor=processor)
 agent.compile(Adam(lr=.001, clipnorm=1.), metrics=['mae'])
+
+if LOAD_WEIGHTS:
+    agent.load_weights('cdqn_{}_weights.h5f'.format(ENV_NAME))
 
 # Okay, now it's time to learn something! We visualize the training here for show, but this
 # slows down training quite a lot. You can always safely abort the training prematurely using
