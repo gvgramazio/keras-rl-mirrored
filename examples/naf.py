@@ -47,11 +47,9 @@ VISUALIZE_TEST = args.render_test
 LOAD_WEIGHTS = args.load_weights
 
 
-class NAFProcessor(Processor):
-    def process_reward(self, reward):
-        # The magnitude of the reward can be important. Since each step yields a relatively
-        # high reward, we reduce the magnitude by two orders.
-        return reward / 100.
+class FoosballProcessor(Processor):
+    def process_observation(self, observation):
+        return observation * 10.
 
 
 # Get the environment and extract the number of actions.
@@ -102,7 +100,10 @@ print(L_model.summary())
 
 # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
 # even the metrics!
-processor = NAFProcessor()
+if ENV_NAME == 'FoosballVREP_sp-v1':
+    processor = FoosballProcessor()
+else:
+    processor = Processor()
 memory = SequentialMemory(limit=MEMORY_LIMIT, window_length=WINDOW_LENGHT)
 random_process = OrnsteinUhlenbeckProcess(theta=.15, mu=0., sigma=.3, size=nb_actions)
 agent = NAFAgent(nb_actions=nb_actions, V_model=V_model, L_model=L_model, mu_model=mu_model,
