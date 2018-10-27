@@ -51,7 +51,11 @@ BATCH_SIZE = args.batch_size
 
 class FoosballProcessor(Processor):
     def process_observation(self, observation):
-        return observation * 10.
+        return observation
+    def process_reward(self, reward):
+        # The magnitude of the reward can be important. Since each step yields a relatively
+        # high reward, we reduce the magnitude by two orders.
+        return reward * 10
 
 
 # Get the environment and extract the number of actions.
