@@ -109,7 +109,7 @@ random_process = OrnsteinUhlenbeckProcess(theta=.15, mu=0., sigma=.3, size=nb_ac
 agent = NAFAgent(nb_actions=nb_actions, V_model=V_model, L_model=L_model, mu_model=mu_model,
                  memory=memory, nb_steps_warmup=NB_STEPS_WARMUP, random_process=random_process,
                  gamma=GAMMA, target_model_update=TARGET_MODEL_UPDATE, processor=processor)
-agent.compile(Adam(lr=.001, clipnorm=1.), metrics=['mae'])
+agent.compile(Adam(lr=.0001, clipnorm=1.), metrics=['mae'])
 
 if LOAD_WEIGHTS:
     agent.load_weights('cdqn_{}_weights.h5f'.format(ENV_NAME))
