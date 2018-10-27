@@ -25,6 +25,7 @@ parser.add_argument('--nb_steps', type=int, default=50000, help="Number of train
 parser.add_argument('--render_train', dest='render_train', action='store_true', help="Either to visualize render or not during training")
 parser.add_argument('--verbose', type=int, default=2, help="Level of verbosity of training")
 parser.add_argument('--nb_episodes', type=int, default=5, help="Number of episodes to test")
+parser.add_argument('--batch_size', type=int, default=32, help="Batch size")
 parser.add_argument('--render_test', dest='render_test', action='store_true', help="Either to visualize render or not during testing")
 parser.add_argument('--load_weights', dest='load_weights', action='store_true', help="Either to load previous weights or not before training")
 parser.set_defaults(render_train=False)
@@ -45,6 +46,7 @@ VERBOSE = args.verbose
 NB_EPISODES = args.nb_episodes
 VISUALIZE_TEST = args.render_test
 LOAD_WEIGHTS = args.load_weights
+BATCH_SIZE = args.batch_size
 
 
 class FoosballProcessor(Processor):
@@ -108,7 +110,7 @@ memory = SequentialMemory(limit=MEMORY_LIMIT, window_length=WINDOW_LENGHT)
 random_process = OrnsteinUhlenbeckProcess(theta=.15, mu=0., sigma=.3, size=nb_actions)
 agent = NAFAgent(nb_actions=nb_actions, V_model=V_model, L_model=L_model, mu_model=mu_model,
                  memory=memory, nb_steps_warmup=NB_STEPS_WARMUP, random_process=random_process,
-                 gamma=GAMMA, target_model_update=TARGET_MODEL_UPDATE, processor=processor)
+                 gamma=GAMMA, target_model_update=TARGET_MODEL_UPDATE, processor=processor, batch_size=BATCH_SIZE)
 agent.compile(Adam(lr=.0001, clipnorm=1.), metrics=['mae'])
 
 if LOAD_WEIGHTS:
