@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from collections import deque, namedtuple
 import warnings
 import random
+import pickle
 
 import numpy as np
 
@@ -154,6 +155,18 @@ class Memory(object):
             'ignore_episode_boundaries': self.ignore_episode_boundaries,
         }
         return config
+
+    def save(self, filepath):
+        with open(filepath.format(deque='observations'), 'wb') as f:
+            pickle.dump(self.recent_observations, f, pickle.HIGHEST_PROTOCOL)
+        with open(filepath.format(deque='terminals'), 'wb') as f:
+            pickle.dump(self.recent_terminals, f, pickle.HIGHEST_PROTOCOL)
+
+    def load(self, filepath):
+        with open(filepath.format(deque='observations'), 'rb') as f:
+            self.recent_observations = pickle.load(f)
+        with open(filepath.format(deque='terminals'), 'rb') as f:
+            self.recent_terminals = pickle.load(f)
 
 class SequentialMemory(Memory):
     def __init__(self, limit, **kwargs):
