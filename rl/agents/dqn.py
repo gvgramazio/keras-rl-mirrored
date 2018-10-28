@@ -83,6 +83,12 @@ class AbstractDQNAgent(Agent):
             'memory': get_object_config(self.memory),
         }
 
+    def load_memory(self, filepath):
+        self.memory.load(filepath)
+
+    def save_memory(self, filepath):
+        self.memory.save(filepath)
+
 # An implementation of the DQN agent as described in Mnih (2013) and Mnih (2015).
 # http://arxiv.org/pdf/1312.5602.pdf
 # http://arxiv.org/abs/1509.06461
