@@ -28,9 +28,11 @@ parser.add_argument('--nb_episodes', type=int, default=5, help="Number of episod
 parser.add_argument('--batch_size', type=int, default=32, help="Batch size")
 parser.add_argument('--render_test', dest='render_test', action='store_true', help="Either to visualize render or not during testing")
 parser.add_argument('--load_weights', dest='load_weights', action='store_true', help="Either to load previous weights or not before training")
+parser.add_argument('--load_memory', dest='load_memory', action='store_true', help="Either to load previous memory or not before training")
 parser.set_defaults(render_train=False)
 parser.set_defaults(render_test=False)
 parser.set_defaults(load_weights=False)
+parser.set_defaults(load_memory=False)
 args = parser.parse_args()
 
 ENV_NAME = args.env
@@ -46,6 +48,7 @@ VERBOSE = args.verbose
 NB_EPISODES = args.nb_episodes
 VISUALIZE_TEST = args.render_test
 LOAD_WEIGHTS = args.load_weights
+LOAD_MEMORY = args.load_memory
 BATCH_SIZE = args.batch_size
 
 
@@ -120,6 +123,9 @@ agent.compile(Adam(lr=.0001, clipnorm=1.), metrics=['mae'])
 if LOAD_WEIGHTS:
     agent.load_weights('naf_{}_weights.h5f'.format(ENV_NAME))
 
+if LOAD_MEMORY:
+    agent.load_memory('naf_memory_{deque}.pkl')
+
 # Okay, now it's time to learn something! We visualize the training here for show, but this
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
@@ -135,8 +141,9 @@ history = agent.fit(
     nb_max_episode_steps=NB_MAX_EPISODE_STEPS,
     callbacks=callbacks)
 
-# After training is done, we save the final weights.
+# After training is done, we save the final weights and memory.
 agent.save_weights('naf_{}_weights.h5f'.format(ENV_NAME), overwrite=True)
+agent.save_memory('naf_memory_{deque}.pkl')
 
 # Finally, evaluate our algorithm for 5 episodes.
 agent.test(env, nb_episodes=NB_EPISODES, visualize=VISUALIZE_TRAIN, nb_max_episode_steps=NB_MAX_EPISODE_STEPS)
