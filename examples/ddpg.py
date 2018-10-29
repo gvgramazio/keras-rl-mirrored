@@ -52,6 +52,7 @@ from keras.optimizers import Adam
 from rl.agents import DDPGAgent
 from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
+from rl.callbacks import FileLogger, ModelIntervalCheckpoint
 
 
 # Get the environment and extract the number of actions.
