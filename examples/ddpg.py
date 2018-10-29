@@ -39,7 +39,7 @@ VERBOSE = args.verbose
 WINDOW_LENGHT = args.window_length
 
 LOG_FILEPATH = 'ddpg_{}_log.json'.format(ENV_NAME)
-WEIGHTS_FILEPATH = 'ddpg_backup_weights_{steps}.h5f'
+WEIGHTS_FILEPATH = 'ddpg_backup_weights_{step}.h5f'
 
 
 import numpy as np
