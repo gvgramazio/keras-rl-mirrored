@@ -102,8 +102,8 @@ agent.compile(Adam(lr=LEARNING_RATE, clipnorm=1.), metrics=['mae'])
 # Okay, now it's time to learn something! We visualize the training here for show, but this
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
-callbacks = [FileLogger(log_filename, interval=1)]
-callbacks += [ModelIntervalCheckpoint(weights_filepath, interval=1000, verbose=1)]
+callbacks = [FileLogger(LOG_FILEPATH, interval=1)]
+callbacks += [ModelIntervalCheckpoint(WEIGHTS_FILEPATH, interval=1000, verbose=1)]
 agent.fit(env, nb_steps=NB_TRAIN_STEPS, visualize=RENDER_TRAIN, verbose=VERBOSE, nb_max_episode_steps=NB_MAX_TRAIN_EPISODE_STEPS, callbacks=callbacks)
 
 # After training is done, we save the final weights.
