@@ -61,6 +61,7 @@ WEIGHTS_FILEPATH = 'weights/ddpg/backup/{step}.h5f'
 
 import numpy as np
 import gym
+import gym_foosball
 
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Flatten, Input, Concatenate
@@ -83,6 +84,16 @@ class LunarLanderContinuousProcessor(WhiteningNormalizerProcessor):
         action = np.clip(action, self.env.action_space.low, self.env.action_space.high)
         return action
 
+class FoosballProcessor(WhiteningNormalizerProcessor):
+    def __init__(self, env):
+        super().__init__()
+        self.env = env
+
+    def process_action(self, action):
+        action = np.clip(action, self.env.action_space.low, self.env.action_space.high)
+        return action
+
+
 # Get the environment and extract the number of actions.
 env = gym.make(ENV_NAME)
 np.random.seed(123)
@@ -93,6 +104,8 @@ nb_actions = env.action_space.shape[0]
 # Some environments need to be processed
 if ENV_NAME == 'LunarLanderContinuous-v2':
     processor = LunarLanderContinuousProcessor(env)
+elif ENV_NAME == 'FoosballVREP_sp-v1':
+    processor = FoosballProcessor(env)
 else:
     processor = Processor()
 
