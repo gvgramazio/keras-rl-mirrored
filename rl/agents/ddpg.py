@@ -170,6 +170,12 @@ class DDPGAgent(Agent):
         self.actor.save_weights(actor_filepath, overwrite=overwrite)
         self.critic.save_weights(critic_filepath, overwrite=overwrite)
 
+    def load_memory(self, filepath):
+        self.memory.load(filepath)
+
+    def save_memory(self, filepath):
+        self.memory.save(filepath)
+
     def update_target_models_hard(self):
         self.target_critic.set_weights(self.critic.get_weights())
         self.target_actor.set_weights(self.actor.get_weights())

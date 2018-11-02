@@ -6,6 +6,8 @@ parser.add_argument('--env', type=str, default='Pendulum-v0', help="OpenAI Gym E
 parser.add_argument('--batch_size', type=int, default=32, help="Size of the batch of memory used to train")
 parser.add_argument('--gamma', type=float, default=.99, help="Discount factor during train")
 parser.add_argument('--learning_rate', type=float, default=.001, help="Learning rate")
+parser.add_argument('--load_memory', dest='load_memory', action='store_true', help="Either to load previously stored memory or not")
+parser.add_argument('--load_weights', dest='load_weights', action='store_true', help="Either to load previously stored weights or not")
 parser.add_argument('--memory_limit', type=int, default=100000, help="Max number of steps stored in memory")
 parser.add_argument('--nb_max_test_episode_steps', type=int, default=200, help="Max number of steps for each episode during test")
 parser.add_argument('--nb_max_train_episode_steps', type=int, default=200, help="Max number of steps for each episode during train")
@@ -18,9 +20,12 @@ parser.add_argument('--render_train', dest='render_train', action='store_true', 
 parser.add_argument('--target_model_update', type=float, default=1e-3, help="Target model update")
 parser.add_argument('--verbose', type=int, default=1, help="Level of verbosity")
 parser.add_argument('--window_length', type=int, default=1, help="How much consecutive frames should be passed to the agent")
+parser.add_argument('--memory_checkpoint_interval', type=int, default=100, help="Interval (expressed as number of episodes) after which memory must be stored")
 parser.add_argument('--weights_checkpoint_interval', type=int, default=10000, help="Interval (expressed as number of timesteps) after which weights must be stored")
 parser.add_argument('--actor_hidden_units', nargs='*', type=int, default=[16, 16, 16], help="Number of units for each hidden layer of actor NN")
 parser.add_argument('--critic_hidden_units', nargs='*', type=int, default=[32, 32, 32], help="Number of units for each hidden layer of critic NN")
+parser.set_defaults(load_memory=False)
+parser.set_defaults(load_weights=False)
 parser.set_defaults(render_test=False)
 parser.set_defaults(render_train=False)
 
@@ -30,6 +35,8 @@ ENV_NAME = args.env
 BATCH_SIZE = args.batch_size
 GAMMA = args.gamma
 LEARNING_RATE = args.learning_rate
+LOAD_MEMORY = args.load_memory
+LOAD_WEIGHTS = args.load_weights
 MEMORY_LIMIT = args.memory_limit
 NB_MAX_TEST_EPISODE_STEPS = args.nb_max_test_episode_steps
 NB_MAX_TRAIN_EPISODE_STEPS = args.nb_max_train_episode_steps
@@ -42,12 +49,14 @@ RENDER_TRAIN = args.render_train
 TARGET_MODEL_UPDATE = args.target_model_update
 VERBOSE = args.verbose
 WINDOW_LENGHT = args.window_length
+MEMORY_CHECKPOINT_INTERVAL = args.memory_checkpoint_interval
 WEIGHTS_CHECKPOINT_INTERVAL = args.weights_checkpoint_interval
 ACTOR_HIDDEN_UNITS = args.actor_hidden_units
 CRITIC_HIDDEN_UNITS = args.critic_hidden_units
 
 LOG_FILEPATH = 'logs/ddpg/{}.json'.format(ENV_NAME)
-WEIGHTS_FILEPATH = 'weights/backup/ddpg/{step}.h5f'
+MEMORY_FILEPATH = 'memories/ddpg/backup/{{deque}}_{episode}.pkl'
+WEIGHTS_FILEPATH = 'weights/ddpg/backup/{step}.h5f'
 
 
 import numpy as np
@@ -60,7 +69,7 @@ from keras.optimizers import Adam
 from rl.agents import DDPGAgent
 from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
-from rl.callbacks import FileLogger, ModelIntervalCheckpoint
+from rl.callbacks import FileLogger, ModelIntervalCheckpoint, MemoryIntervalCheckpoint
 from rl.core import Processor
 
 
@@ -108,9 +117,13 @@ x = Activation('linear')(x)
 critic = Model(inputs=[action_input, observation_input], outputs=x)
 print(critic.summary())
 
+# We initialize the memory. We can also load a previously stored memory if we have any.
+memory = SequentialMemory(limit=MEMORY_LIMIT, window_length=WINDOW_LENGHT)
+if LOAD_MEMORY:
+    memory.load('memories/ddpg/{deque}.pkl')
+
 # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
 # even the metrics!
-memory = SequentialMemory(limit=MEMORY_LIMIT, window_length=WINDOW_LENGHT)
 random_process = OrnsteinUhlenbeckProcess(size=nb_actions, theta=.15, mu=0., sigma=.3)
 agent = DDPGAgent(nb_actions=nb_actions, actor=actor, critic=critic,
                   critic_action_input=action_input, memory=memory,
@@ -120,16 +133,21 @@ agent = DDPGAgent(nb_actions=nb_actions, actor=actor, critic=critic,
                   target_model_update=TARGET_MODEL_UPDATE, processor=processor,
                   batch_size=BATCH_SIZE)
 agent.compile(Adam(lr=LEARNING_RATE, clipnorm=1.), metrics=['mae'])
+if LOAD_WEIGHTS:
+    agent.load_weights('weights/ddpg/{}.h5f'.format(ENV_NAME))
+
 
 # Okay, now it's time to learn something! We visualize the training here for show, but this
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
 callbacks = [FileLogger(LOG_FILEPATH, interval=1)]
-callbacks += [ModelIntervalCheckpoint(WEIGHTS_FILEPATH, interval=WEIGHTS_CHECKPOINT_INTERVAL, verbose=1)]
+callbacks += [ModelIntervalCheckpoint(WEIGHTS_FILEPATH, interval=WEIGHTS_CHECKPOINT_INTERVAL, verbose=0)]
+callbacks += [MemoryIntervalCheckpoint(MEMORY_FILEPATH, interval=MEMORY_CHECKPOINT_INTERVAL, verbose=0)]
 agent.fit(env, nb_steps=NB_TRAIN_STEPS, visualize=RENDER_TRAIN, verbose=VERBOSE, nb_max_episode_steps=NB_MAX_TRAIN_EPISODE_STEPS, callbacks=callbacks)
 
-# After training is done, we save the final weights.
+# After training is done, we save the final weights and memory.
 agent.save_weights('weights/ddpg/{}.h5f'.format(ENV_NAME), overwrite=True)
+agent.save_memory('memories/ddpg/{deque}.pkl')
 
 # Finally, evaluate our algorithm for 5 episodes.
 agent.test(env, nb_episodes=NB_TEST_EPISODES, visualize=RENDER_TEST, nb_max_episode_steps=NB_MAX_TEST_EPISODE_STEPS)
