@@ -71,12 +71,13 @@ from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
 from rl.callbacks import FileLogger, ModelIntervalCheckpoint, MemoryIntervalCheckpoint
 from rl.core import Processor
+from rl.processors import WhiteningNormalizerProcessor
 
 
-class LunarLanderContinuousProcessor(Processor):
+class LunarLanderContinuousProcessor(WhiteningNormalizerProcessor):
     def __init__(self, env):
-        self.env = env
         super().__init__()
+        self.env = env
 
     def process_action(self, action):
         action = np.clip(action, self.env.action_space.low, self.env.action_space.high)
