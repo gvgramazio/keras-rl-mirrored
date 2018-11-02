@@ -46,8 +46,8 @@ WEIGHTS_CHECKPOINT_INTERVAL = args.weights_checkpoint_interval
 ACTOR_HIDDEN_UNITS = args.actor_hidden_units
 CRITIC_HIDDEN_UNITS = args.critic_hidden_units
 
-LOG_FILEPATH = 'ddpg_{}_log.json'.format(ENV_NAME)
-WEIGHTS_FILEPATH = 'ddpg_backup_weights_{step}.h5f'
+LOG_FILEPATH = 'logs/ddpg/{}.json'.format(ENV_NAME)
+WEIGHTS_FILEPATH = 'weights/backup/ddpg/{step}.h5f'
 
 
 import numpy as np
@@ -129,7 +129,7 @@ callbacks += [ModelIntervalCheckpoint(WEIGHTS_FILEPATH, interval=WEIGHTS_CHECKPO
 agent.fit(env, nb_steps=NB_TRAIN_STEPS, visualize=RENDER_TRAIN, verbose=VERBOSE, nb_max_episode_steps=NB_MAX_TRAIN_EPISODE_STEPS, callbacks=callbacks)
 
 # After training is done, we save the final weights.
-agent.save_weights('ddpg_{}_weights.h5f'.format(ENV_NAME), overwrite=True)
+agent.save_weights('weights/ddpg/{}.h5f'.format(ENV_NAME), overwrite=True)
 
 # Finally, evaluate our algorithm for 5 episodes.
 agent.test(env, nb_episodes=NB_TEST_EPISODES, visualize=RENDER_TEST, nb_max_episode_steps=NB_MAX_TEST_EPISODE_STEPS)
