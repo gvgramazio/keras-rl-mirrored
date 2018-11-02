@@ -17,6 +17,8 @@ parser.add_argument('--render_train', dest='render_train', action='store_true', 
 parser.add_argument('--target_model_update', type=float, default=1e-3, help="Target model update")
 parser.add_argument('--verbose', type=int, default=1, help="Level of verbosity")
 parser.add_argument('--window_length', type=int, default=1, help="How much consecutive frames should be passed to the agent")
+parser.add_argument('--actor_hidden_units', nargs='*', type=int, default=[16, 16, 16], help="Number of units for each hidden layer of actor NN")
+parser.add_argument('--critic_hidden_units', nargs='*', type=int, default=[32, 32, 32], help="Number of units for each hidden layer of critic NN")
 parser.set_defaults(render_test=False)
 parser.set_defaults(render_train=False)
 
@@ -37,6 +39,8 @@ RENDER_TRAIN = args.render_train
 TARGET_MODEL_UPDATE = args.target_model_update
 VERBOSE = args.verbose
 WINDOW_LENGHT = args.window_length
+ACTOR_HIDDEN_UNITS = args.actor_hidden_units
+CRITIC_HIDDEN_UNITS = args.critic_hidden_units
 
 LOG_FILEPATH = 'ddpg_{}_log.json'.format(ENV_NAME)
 WEIGHTS_FILEPATH = 'ddpg_backup_weights_{step}.h5f'
@@ -65,12 +69,9 @@ nb_actions = env.action_space.shape[0]
 # Next, we build a very simple model.
 actor = Sequential()
 actor.add(Flatten(input_shape=(WINDOW_LENGHT,) + env.observation_space.shape))
-actor.add(Dense(16))
-actor.add(Activation('relu'))
-actor.add(Dense(16))
-actor.add(Activation('relu'))
-actor.add(Dense(16))
-actor.add(Activation('relu'))
+for i in range(len(ACTOR_HIDDEN_UNITS)):
+    actor.add(Dense(ACTOR_HIDDEN_UNITS[i]))
+    actor.add(Activation('relu'))
 actor.add(Dense(nb_actions))
 actor.add(Activation('linear'))
 print(actor.summary())
@@ -79,12 +80,9 @@ action_input = Input(shape=(nb_actions,), name='action_input')
 observation_input = Input(shape=(WINDOW_LENGHT,) + env.observation_space.shape, name='observation_input')
 flattened_observation = Flatten()(observation_input)
 x = Concatenate()([action_input, flattened_observation])
-x = Dense(32)(x)
-x = Activation('relu')(x)
-x = Dense(32)(x)
-x = Activation('relu')(x)
-x = Dense(32)(x)
-x = Activation('relu')(x)
+for i in range(len(CRITIC_HIDDEN_UNITS)):
+    x = Dense(CRITIC_HIDDEN_UNITS[i])(x)
+    x = Activation('relu')(x)
 x = Dense(1)(x)
 x = Activation('linear')(x)
 critic = Model(inputs=[action_input, observation_input], outputs=x)
