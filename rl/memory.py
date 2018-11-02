@@ -83,6 +83,14 @@ class RingBuffer(object):
         """
         return len(self.data)
 
+    def save(self, filepath, ring_buffer_name=None):
+        with open(filepath.format(deque=ring_buffer_name), 'wb') as f:
+            pickle.dump(self.data, f, pickle.HIGHEST_PROTOCOL)
+
+    def load(self, filepath, ring_buffer_name=None):
+        with open(filepath.format(deque=ring_buffer_name), 'rb') as f:
+            self.data = pickle.load(f)
+
 def zeroed_observation(observation):
     """Return an array of zeros with same shape as given observation
 
@@ -155,18 +163,6 @@ class Memory(object):
             'ignore_episode_boundaries': self.ignore_episode_boundaries,
         }
         return config
-
-    def save(self, filepath):
-        with open(filepath.format(deque='observations'), 'wb') as f:
-            pickle.dump(self.recent_observations, f, pickle.HIGHEST_PROTOCOL)
-        with open(filepath.format(deque='terminals'), 'wb') as f:
-            pickle.dump(self.recent_terminals, f, pickle.HIGHEST_PROTOCOL)
-
-    def load(self, filepath):
-        with open(filepath.format(deque='observations'), 'rb') as f:
-            self.recent_observations = pickle.load(f)
-        with open(filepath.format(deque='terminals'), 'rb') as f:
-            self.recent_terminals = pickle.load(f)
 
 class SequentialMemory(Memory):
     def __init__(self, limit, **kwargs):
@@ -288,6 +284,18 @@ class SequentialMemory(Memory):
         config = super(SequentialMemory, self).get_config()
         config['limit'] = self.limit
         return config
+
+    def save(self, filepath):
+        self.actions.save(filepath, ring_buffer_name='actions')
+        self.rewards.save(filepath, ring_buffer_name='rewards')
+        self.terminals.save(filepath, ring_buffer_name='terminals')
+        self.observations.save(filepath, ring_buffer_name='observations')
+
+    def load(self, filepath):
+        self.actions.load(filepath, ring_buffer_name='actions')
+        self.rewards.load(filepath, ring_buffer_name='rewards')
+        self.terminals.load(filepath, ring_buffer_name='terminals')
+        self.observations.load(filepath, ring_buffer_name='observations')
 
 
 class EpisodeParameterMemory(Memory):
