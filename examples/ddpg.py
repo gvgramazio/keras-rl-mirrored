@@ -59,7 +59,17 @@ from rl.agents import DDPGAgent
 from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
 from rl.callbacks import FileLogger, ModelIntervalCheckpoint
+from rl.core import Processor
 
+
+class LunarLanderContinuousProcessor(Processor):
+    def __init__(self, env):
+        self.env = env
+        super().__init__()
+
+    def process_action(self, action):
+        action = np.clip(action, self.env.action_space.low, self.env.action_space.high)
+        return action
 
 # Get the environment and extract the number of actions.
 env = gym.make(ENV_NAME)
@@ -67,6 +77,12 @@ np.random.seed(123)
 env.seed(123)
 assert len(env.action_space.shape) == 1
 nb_actions = env.action_space.shape[0]
+
+# Some environments need to be processed
+if ENV_NAME == 'LunarLanderContinuous-v2':
+    processor = LunarLanderContinuousProcessor(env)
+else:
+    processor = Processor()
 
 # Next, we build a very simple model.
 actor = Sequential()
@@ -94,9 +110,13 @@ print(critic.summary())
 # even the metrics!
 memory = SequentialMemory(limit=MEMORY_LIMIT, window_length=WINDOW_LENGHT)
 random_process = OrnsteinUhlenbeckProcess(size=nb_actions, theta=.15, mu=0., sigma=.3)
-agent = DDPGAgent(nb_actions=nb_actions, actor=actor, critic=critic, critic_action_input=action_input,
-                  memory=memory, nb_steps_warmup_critic=NB_STEPS_WARMUP_CRITIC, nb_steps_warmup_actor=NB_STEPS_WARMUP_ACTOR,
-                  random_process=random_process, gamma=GAMMA, target_model_update=TARGET_MODEL_UPDATE)
+agent = DDPGAgent(nb_actions=nb_actions, actor=actor, critic=critic,
+                  critic_action_input=action_input, memory=memory,
+                  nb_steps_warmup_critic=NB_STEPS_WARMUP_CRITIC,
+                  nb_steps_warmup_actor=NB_STEPS_WARMUP_ACTOR,
+                  random_process=random_process, gamma=GAMMA,
+                  target_model_update=TARGET_MODEL_UPDATE, processor=processor,
+                  batch_size=BATCH_SIZE)
 agent.compile(Adam(lr=LEARNING_RATE, clipnorm=1.), metrics=['mae'])
 
 # Okay, now it's time to learn something! We visualize the training here for show, but this
