@@ -18,6 +18,7 @@ parser.add_argument('--render_train', dest='render_train', action='store_true', 
 parser.add_argument('--target_model_update', type=float, default=1e-3, help="Target model update")
 parser.add_argument('--verbose', type=int, default=1, help="Level of verbosity")
 parser.add_argument('--window_length', type=int, default=1, help="How much consecutive frames should be passed to the agent")
+parser.add_argument('--weights_checkpoint_interval', type=int, default=10000, help="Interval (expressed as number of timesteps) after which weights must be stored")
 parser.add_argument('--actor_hidden_units', nargs='*', type=int, default=[16, 16, 16], help="Number of units for each hidden layer of actor NN")
 parser.add_argument('--critic_hidden_units', nargs='*', type=int, default=[32, 32, 32], help="Number of units for each hidden layer of critic NN")
 parser.set_defaults(render_test=False)
@@ -41,6 +42,7 @@ RENDER_TRAIN = args.render_train
 TARGET_MODEL_UPDATE = args.target_model_update
 VERBOSE = args.verbose
 WINDOW_LENGHT = args.window_length
+WEIGHTS_CHECKPOINT_INTERVAL = args.weights_checkpoint_interval
 ACTOR_HIDDEN_UNITS = args.actor_hidden_units
 CRITIC_HIDDEN_UNITS = args.critic_hidden_units
 
@@ -123,7 +125,7 @@ agent.compile(Adam(lr=LEARNING_RATE, clipnorm=1.), metrics=['mae'])
 # slows down training quite a lot. You can always safely abort the training prematurely using
 # Ctrl + C.
 callbacks = [FileLogger(LOG_FILEPATH, interval=1)]
-callbacks += [ModelIntervalCheckpoint(WEIGHTS_FILEPATH, interval=1000, verbose=1)]
+callbacks += [ModelIntervalCheckpoint(WEIGHTS_FILEPATH, interval=WEIGHTS_CHECKPOINT_INTERVAL, verbose=1)]
 agent.fit(env, nb_steps=NB_TRAIN_STEPS, visualize=RENDER_TRAIN, verbose=VERBOSE, nb_max_episode_steps=NB_MAX_TRAIN_EPISODE_STEPS, callbacks=callbacks)
 
 # After training is done, we save the final weights.
