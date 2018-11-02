@@ -3,6 +3,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Deep Deterministic Policy Gradients (DDPG) with gym environments')
 parser.add_argument('--env', type=str, default='Pendulum-v0', help="OpenAI Gym Environment")
+parser.add_argument('--batch_size', type=int, default=32, help="Size of the batch of memory used to train")
 parser.add_argument('--gamma', type=float, default=.99, help="Discount factor during train")
 parser.add_argument('--learning_rate', type=float, default=.001, help="Learning rate")
 parser.add_argument('--memory_limit', type=int, default=100000, help="Max number of steps stored in memory")
@@ -25,6 +26,7 @@ parser.set_defaults(render_train=False)
 args = parser.parse_args()
 
 ENV_NAME = args.env
+BATCH_SIZE = args.batch_size
 GAMMA = args.gamma
 LEARNING_RATE = args.learning_rate
 MEMORY_LIMIT = args.memory_limit
