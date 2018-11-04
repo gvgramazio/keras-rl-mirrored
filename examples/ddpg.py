@@ -75,6 +75,13 @@ from rl.core import Processor
 from rl.processors import WhiteningNormalizerProcessor
 
 
+import string
+import random
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
+
+rand_str = id_generator()
+
 class LunarLanderContinuousProcessor(WhiteningNormalizerProcessor):
     def __init__(self, env):
         super().__init__()
@@ -112,20 +119,22 @@ else:
 # Next, we build a very simple model.
 actor = Sequential()
 actor.add(Flatten(input_shape=(WINDOW_LENGHT,) + env.observation_space.shape))
-for i in range(len(ACTOR_HIDDEN_UNITS)):
-    actor.add(Dense(ACTOR_HIDDEN_UNITS[i]))
-    actor.add(Activation('relu'))
+actor.add(Dense(1024, activation='relu'))
+actor.add(Dropout(0.4))
+actor.add(Dense(512, activation='relu'))
+actor.add(Dropout(0.4))
 actor.add(Dense(nb_actions))
-actor.add(Activation('linear'))
+actor.add(Activation('sigmoid'))
 print(actor.summary())
 
 action_input = Input(shape=(nb_actions,), name='action_input')
 observation_input = Input(shape=(WINDOW_LENGHT,) + env.observation_space.shape, name='observation_input')
 flattened_observation = Flatten()(observation_input)
-x = Concatenate()([action_input, flattened_observation])
-for i in range(len(CRITIC_HIDDEN_UNITS)):
-    x = Dense(CRITIC_HIDDEN_UNITS[i])(x)
-    x = Activation('relu')(x)
+x = Dense(1024, activation='relu')(flattened_observation)
+x = Dropout(0.4)(x)
+x = Concatenate()([x, action_input])
+x = Dense(512, activation='relu')(x)
+x = Dropout(0.4)(x)
 x = Dense(1)(x)
 x = Activation('linear')(x)
 critic = Model(inputs=[action_input, observation_input], outputs=x)
@@ -146,7 +155,7 @@ agent = DDPGAgent(nb_actions=nb_actions, actor=actor, critic=critic,
                   random_process=random_process, gamma=GAMMA,
                   target_model_update=TARGET_MODEL_UPDATE, processor=processor,
                   batch_size=BATCH_SIZE)
-agent.compile(Adam(lr=LEARNING_RATE, clipnorm=1.), metrics=['mae'])
+agent.compile([Adam(lr=1e-4), Adam(lr=1e-3)], metrics=['mae'])
 if LOAD_WEIGHTS:
     agent.load_weights('weights/ddpg/{}.h5f'.format(ENV_NAME))
 
@@ -160,8 +169,8 @@ callbacks += [MemoryIntervalCheckpoint(MEMORY_FILEPATH, interval=MEMORY_CHECKPOI
 agent.fit(env, nb_steps=NB_TRAIN_STEPS, visualize=RENDER_TRAIN, verbose=VERBOSE, nb_max_episode_steps=NB_MAX_TRAIN_EPISODE_STEPS, callbacks=callbacks)
 
 # After training is done, we save the final weights and memory.
-agent.save_weights('weights/ddpg/{}.h5f'.format(ENV_NAME), overwrite=True)
-agent.save_memory('memories/ddpg/{deque}.pkl')
+agent.save_weights('weights/ddpg/'+rand_str+'{}.h5f'.format(ENV_NAME), overwrite=True)
+agent.save_memory('memories/ddpg/'+rand_str+'{deque}.pkl')
 
 # Finally, evaluate our algorithm for 5 episodes.
 agent.test(env, nb_episodes=NB_TEST_EPISODES, visualize=RENDER_TEST, nb_max_episode_steps=NB_MAX_TEST_EPISODE_STEPS)
