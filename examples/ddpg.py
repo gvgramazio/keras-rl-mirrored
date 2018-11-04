@@ -54,7 +54,14 @@ WEIGHTS_CHECKPOINT_INTERVAL = args.weights_checkpoint_interval
 ACTOR_HIDDEN_UNITS = args.actor_hidden_units
 CRITIC_HIDDEN_UNITS = args.critic_hidden_units
 
-LOG_FILEPATH = 'logs/ddpg/{}.json'.format(ENV_NAME)
+import string
+import random
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
+
+rand_str = id_generator()
+
+LOG_FILEPATH = 'logs/ddpg/'+rand_str+'{}.json'.format(ENV_NAME)
 MEMORY_FILEPATH = 'memories/ddpg/backup/{{deque}}_{episode}.pkl'
 WEIGHTS_FILEPATH = 'weights/ddpg/backup/{step}.h5f'
 
@@ -74,13 +81,6 @@ from rl.callbacks import FileLogger, ModelIntervalCheckpoint, MemoryIntervalChec
 from rl.core import Processor
 from rl.processors import WhiteningNormalizerProcessor
 
-
-import string
-import random
-def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
-
-rand_str = id_generator()
 
 class LunarLanderContinuousProcessor(WhiteningNormalizerProcessor):
     def __init__(self, env):
